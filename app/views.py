@@ -1,8 +1,11 @@
+from django.contrib.auth import login
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Car
-from .serializers import CarListSerializer, CarCreateSerializer, CarDetailSerializer, CarUpdateSerializer
+from .serializers import CarListSerializer, CarCreateSerializer, CarDetailSerializer, CarUpdateSerializer, \
+    UserRegisterSerializer, UserLoginSerializer
+
 
 @api_view(['GET'])
 def car_list_view(request):
@@ -44,3 +47,29 @@ def update_car_view(request, car_id):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def user_register_view(request):
+    serializer = UserRegisterSerializer(data=request.data)
+
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
+        return Response(serializer.data, status.HTTP_201_CREATED)
+    return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def user_login_view(request):
+    serializer = UserLoginSerializer(data=request.data, context={'request': request})
+    if serializer.is_valid(raise_exception=True):
+        user = serializer.validated_data['user']
+        login(request, user)
+        return Response(serializer.data, status.HTTP_200_OK)
+    return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def user_logout_view(request):
+    request.session.flush()
+    return Response(status.HTTP_204_NO_CONTENT)
